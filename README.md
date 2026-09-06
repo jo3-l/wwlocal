@@ -32,7 +32,7 @@ All code in this project was written by Fable 5.1 and the software is released i
    uv run wwlocal sync
    ```
 
-   to scrape WaterlooWorks jobs and save them to a local SQLite database `data/waterlooworks_jobs.db`. Note that the first run of this command will submit one request[^1] to WaterlooWorks per job posting under the Computer Science, Software Engineering, and Mathematics categories (effectively opening the details pane for each job one by one.) Subsequent syncs will operate in an incremental fashion and only request job details for new postings since the last run.
+   to scrape WaterlooWorks jobs and save them to a local SQLite database `data/waterlooworks_jobs.db`. Note that the first run of this command will submit one request to WaterlooWorks per job posting under the Computer Science, Software Engineering, and Mathematics categories (effectively opening the details modal for each job one by one.) Subsequent syncs will operate in an incremental fashion and only request job details for new postings since the last run.
 
    To audit this code, see [`./src/wwlocal/sync/__init__.py`](./src/wwlocal/sync/__init__.py) and [`./src/wwlocal/waterlooworks.py`](./src/wwlocal/waterlooworks.py).
 
