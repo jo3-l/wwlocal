@@ -46,3 +46,14 @@ All code in this project was written by Fable 5.1 and the software is released i
    ```
 
 You may want to periodically rerun `wwlocal sync` to pull new postings (which may require another `wwlocal login`.)
+
+## Useful keybinds
+
+The web viewer is keyboard-friendly:
+
+- <kbd>j</kbd> and <kbd>k</kbd> move to the next/previous posting respectively.
+- <kbd>x</kbd> hides a posting.
+- <kbd>o</kbd> opens the corresponding application page on WaterlooWorks; <kbd>e</kbd> opens the external application link if detected (for employers that require applying on their site in addition to via WaterlooWorks.)
+- <kbd>a</kbd> marks a posting as applied, <kbd>s</kbd> shortlists a posting.
+- <kbd>ctrl</kbd> + <kbd>z</kbd> undoes most actions.
+- <kbd>/</kbd> opens the search bar.
