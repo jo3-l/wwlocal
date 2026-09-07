@@ -1,6 +1,8 @@
 // Posting bodies arrive as employer-authored HTML. This is the only HTML the page renders raw
 // (see Detail.js), so everything active is stripped and the markup is tidied for display.
 
+import { linkSegments } from "./format.js";
+
 export function sanitize(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   for (const el of doc.querySelectorAll("script,style,iframe,object,embed,link,meta,form,input,button")) el.remove();
@@ -12,6 +14,20 @@ export function sanitize(html) {
     }
     if (el.tagName === "A") { el.setAttribute("target", "_blank"); el.setAttribute("rel", "noopener"); }
     if (el.tagName === "IMG") el.remove();
+  }
+  // Bare URLs and emails in prose become links; text already inside an <a> is left alone.
+  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+  const texts = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) if (!n.parentElement.closest("a")) texts.push(n);
+  for (const n of texts) {
+    const segs = linkSegments(n.textContent);
+    if (!segs.some(s => s.href)) continue;
+    n.replaceWith(...segs.map(s => {
+      if (!s.href) return doc.createTextNode(s.text);
+      const a = doc.createElement("a");
+      a.href = s.href; a.textContent = s.text; a.target = "_blank"; a.rel = "noopener noreferrer";
+      return a;
+    }));
   }
   // Collapse runs of <br> (whitespace between them allowed) into one paragraph gap.
   for (const br of [...doc.body.querySelectorAll("br")]) {

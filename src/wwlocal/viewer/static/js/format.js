@@ -48,3 +48,23 @@ export function compHourly(c) {
 export function humanize(key) {
   return key.replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
 }
+
+// Bare URLs, www. hosts and email addresses in prose. Trailing punctuation is left out of the match
+// so "see https://x.com/jobs." links to the page, not to "jobs.".
+const LINK_RE = /\b(?:https?:\/\/[^\s<>"'()]+|www\.[^\s<>"'()]+|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)/g;
+
+/** Split text into [{text}] and [{text, href}] segments, so callers can render links however they like. */
+export function linkSegments(text) {
+  const out = [];
+  let last = 0;
+  for (const m of String(text).matchAll(LINK_RE)) {
+    let hit = m[0].replace(/[.,;:!?]+$/, "");
+    if (!hit) continue;
+    if (m.index > last) out.push({ text: text.slice(last, m.index) });
+    const href = hit.includes("@") && !/^https?:/.test(hit) ? "mailto:" + hit : /^www\./i.test(hit) ? "https://" + hit : hit;
+    out.push({ text: hit, href });
+    last = m.index + hit.length;
+  }
+  if (last < text.length) out.push({ text: text.slice(last) });
+  return out;
+}

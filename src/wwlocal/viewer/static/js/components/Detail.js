@@ -1,27 +1,30 @@
 import { html, useEffect, useRef } from "../../vendor/preact-htm.mjs";
 import * as store from "../store.js";
-import { COMP_UNIT_LABEL, DATE_TIME, compHourly, compLabel, fmtDate, humanize } from "../format.js";
+import { COMP_UNIT_LABEL, DATE_TIME, compHourly, compLabel, fmtDate, humanize, linkSegments } from "../format.js";
 import { isEmptyHtml, sanitize } from "../sanitize.js";
 import { Ratings } from "./Ratings.js";
 
 // Which posting fields become body sections, in what order, with what heading. Anything in
-// `fields` not listed here is appended with a humanized heading; SKIP is what the header already shows.
+// `fields` not listed here is appended with a humanized heading; SKIP is what the header already shows
+// (address, docs required, application method) or that isn't worth the space (targeted disciplines).
 const LABELS = {
   job_summary: "Summary", job_responsibilities: "Responsibilities", required_skills: "Required skills",
   compensation_and_benefits: "Compensation and benefits", additional_employment_arrangement_location_information: "Work arrangement details",
   special_job_requirements: "Special requirements", special_work_term_start_end_date_considerations: "Start and end dates",
   transportation_and_housing: "Transportation and housing", additional_application_information: "How to apply",
-  application_documents_required: "Documents required", targeted_degrees_and_disciplines: "Targeted disciplines",
   additional_information: "Additional information", employer_internal_job_number: "Employer job number",
-  job_location_if_exact_address_unknown_or_multiple_locations: "Location notes", application_method: "Application method",
+  job_location_if_exact_address_unknown_or_multiple_locations: "Location notes",
 };
 const BODY_ORDER = ["job_summary", "job_responsibilities", "required_skills", "compensation_and_benefits",
   "additional_employment_arrangement_location_information", "special_work_term_start_end_date_considerations", "special_job_requirements",
-  "transportation_and_housing", "additional_information", "additional_application_information", "application_documents_required",
-  "application_method", "targeted_degrees_and_disciplines", "job_location_if_exact_address_unknown_or_multiple_locations", "employer_internal_job_number"];
-const SHORT = new Set(["application_documents_required", "application_method", "targeted_degrees_and_disciplines", "employer_internal_job_number"]);
+  "transportation_and_housing", "additional_information", "additional_application_information",
+  "job_location_if_exact_address_unknown_or_multiple_locations", "employer_internal_job_number"];
+const SHORT = new Set(["employer_internal_job_number"]);
+// Mostly boilerplate repeated across postings: collapsed by default behind a one-line preview.
+const FOLDED = new Set(["special_job_requirements", "additional_information"]);
 const SKIP = new Set(["work_term", "job_type", "job_title", "number_of_job_openings", "level", "region", "job_address_line_one", "job_address_line_two",
-  "job_city", "job_province_state", "job_postal_zip_code", "job_country", "employment_location_arrangement", "work_term_duration", "application_deadline", "organization", "division"]);
+  "job_city", "job_province_state", "job_postal_zip_code", "job_country", "employment_location_arrangement", "work_term_duration", "application_deadline", "organization", "division",
+  "application_documents_required", "application_method", "targeted_degrees_and_disciplines"]);
 
 export function Detail({ state }) {
   const box = useRef();
@@ -74,10 +77,7 @@ function Posting({ job: j, mark: m }) {
         <span class="hint">${hint}</span>
       </div>
       <${Ratings} job=${j} r=${j.rating_summary} />
-      <div class="body">
-        <${Body} job=${j} />
-        <${Address} job=${j} />
-      </div>
+      <${Body} job=${j} />
       <div class="stamp">
         First seen ${fmtDate(j.first_seen, DATE_TIME)}, last seen ${fmtDate(j.last_seen, DATE_TIME)}${j.div_id ? ", employer division " + j.div_id : ""}
       </div>
@@ -115,20 +115,42 @@ function CompCell({ job: j }) {
   return html`<div class="pay"><b>—</b>no compensation info</div>`;
 }
 
-/** One section per non-empty posting field. */
+/** One section per non-empty posting field. Boilerplate-heavy ones fold behind a preview. */
 function Body({ job: j }) {
   const f = j.fields || {};
   const keys = [...BODY_ORDER.filter(k => k in f), ...Object.keys(f).filter(k => !SKIP.has(k) && !BODY_ORDER.includes(k))];
-  return keys.map(k => {
-    const value = k === "application_documents_required" && j.facets.docs.length ? j.facets.docs.join(", ") : f[k];
-    const content = fieldContent(value);
-    if (!content) return null;
-    return html`
-      <section class=${"sec" + (SHORT.has(k) ? " short" : "")} key=${k}>
-        <h3>${LABELS[k] || humanize(k)}</h3>
-        ${content}
-      </section>`;
-  });
+  return html`
+    <div class="body">
+      ${keys.map(k => {
+        const content = fieldContent(f[k]);
+        if (!content) return null;
+        const title = LABELS[k] || humanize(k), cls = "sec" + (SHORT.has(k) ? " short" : "");
+        if (FOLDED.has(k)) {
+          // Keyed per posting so a section you opened doesn't stay open on the next one.
+          return html`
+            <details class=${cls + " fold"} key=${j.id + ":" + k}>
+              <summary><h3>${title}</h3><span class="peek">${previewOf(f[k])}</span></summary>
+              ${content}
+            </details>`;
+        }
+        return html`
+          <section class=${cls} key=${k}>
+            <h3>${title}</h3>
+            ${content}
+          </section>`;
+      })}
+    </div>`;
+}
+
+/** First line or so of a field as plain text, for a folded section's summary row. */
+function previewOf(v) {
+  let t = "";
+  if (typeof v === "string") t = v;
+  else if (v && v.list) t = v.list.map(x => x.replace(/^- Theme - /, "")).join(", ");
+  else if (v && v.text) t = v.text;
+  else if (v && v.html) t = new DOMParser().parseFromString(sanitize(v.html), "text/html").body.textContent || "";
+  t = t.replace(/\s+/g, " ").trim();
+  return t.length > 110 ? t.slice(0, 108).replace(/\s+\S*$/, "") + "…" : t;
 }
 
 /**
@@ -142,7 +164,7 @@ function fieldContent(v) {
     const clean = sanitize(v.html);
     return isEmptyHtml(clean) ? null : html`<div class="txt" dangerouslySetInnerHTML=${{ __html: clean }}></div>`;
   }
-  if (v.list) return v.list.length ? html`<ul class="plain">${v.list.map(x => html`<li key=${x}>${x.replace(/^- Theme - /, "")}</li>`)}</ul>` : null;
+  if (v.list) return v.list.length ? html`<ul class="plain">${v.list.map(x => html`<li key=${x}>${linkify(x.replace(/^- Theme - /, ""))}</li>`)}</ul>` : null;
   if (v.text) return textBlocks(v.text);
   return null;
 }
@@ -153,19 +175,11 @@ function textBlocks(t) {
   if (!paras.length) return null;
   return html`
     <div class="txt">
-      ${paras.map((p, i) => html`<p key=${i}>${p.split("\n").flatMap((line, k) => k ? [html`<br />`, line] : [line])}</p>`)}
+      ${paras.map((p, i) => html`<p key=${i}>${p.split("\n").flatMap((line, k) => k ? [html`<br />`, ...linkify(line)] : linkify(line))}</p>`)}
     </div>`;
 }
 
-function Address({ job: j }) {
-  const a = (j.detail || {}).address;
-  const addr = a ? [a.line1, a.line2, [a.city, a.province, a.postal_code].filter(Boolean).join(", "), a.country].filter(Boolean).join("\n") : "";
-  const locs = j.locations && j.locations.length ? j.locations : [];
-  if (!addr && !locs.length) return null;
-  return html`
-    <section class="sec">
-      <h3>Address</h3>
-      <div class="addr">${addr}</div>
-      ${locs.length && !addr ? html`<div class="locs">${locs.map(l => l.name).join("; ")}</div>` : null}
-    </section>`;
+/** Plain text → text and <a> nodes for any URLs or emails in it. */
+function linkify(text) {
+  return linkSegments(text).map(s => s.href ? html`<a href=${s.href} target="_blank" rel="noopener noreferrer">${s.text}</a>` : s.text);
 }
