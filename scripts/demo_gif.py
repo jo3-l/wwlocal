@@ -26,7 +26,7 @@ from playwright.sync_api import Page, ViewportSize, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 PORT = 8814
-VIEWPORT: ViewportSize = {"width": 1040, "height": 660}
+VIEWPORT: ViewportSize = {"width": 1200, "height": 660}
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "assets/demo.gif"
 
 # ---------------------------------------------------------------- mock board
@@ -314,8 +314,8 @@ def record(page: Page) -> list[tuple[Image.Image, int]]:
     r.snap(300)
 
     # 3. a filter
-    r.hud(command="filter: arrangement")
-    page.click("details.dd summary:has-text('Arrangement')")
+    r.hud(command="filter: work mode")
+    page.click("details.dd summary:has-text('Work mode')")
     r.snap(600)
     page.click("details.dd[open] .menu label:has-text('Remote')")
     r.snap(1000)
