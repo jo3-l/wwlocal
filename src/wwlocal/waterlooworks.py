@@ -6,6 +6,7 @@ and rotate on each page load (but stay valid for the session), so one GET yields
 
 from __future__ import annotations
 
+import codecs
 import json
 import re
 import sys
@@ -88,6 +89,30 @@ def _clusters(html: str) -> dict[str, str]:
     return {v: lbl.strip() for v, lbl in re.findall(r"'value':'(\d+)','label':'([^']*)'", raw)}
 
 
+def _cp1252_fallback(e: UnicodeError) -> tuple[str, int]:
+    """Decode an undecodable run as cp1252, leaving the rest of the body alone."""
+    if not isinstance(e, UnicodeDecodeError):
+        raise e
+    return e.object[e.start : e.end].decode("cp1252", errors="replace"), e.end
+
+
+codecs.register_error("wwlocal_cp1252", _cp1252_fallback)
+
+
+def _text(r: httpx2.Response) -> str:
+    """Postings occasionally carry stray cp1252 bytes in an otherwise UTF-8 body."""
+    enc = r.encoding or "utf-8"
+    try:
+        return r.content.decode(enc)
+    except UnicodeDecodeError:
+        return r.content.decode(enc, errors="wwlocal_cp1252")
+
+
+def _json(r: httpx2.Response) -> dict:
+    """`Response.json` decodes the raw bytes as strict UTF-8; go through `_text` instead."""
+    return json.loads(_text(r))
+
+
 def _post(c: httpx2.Client, **form: str) -> httpx2.Response:
     for attempt in range(3):
         try:
@@ -105,7 +130,7 @@ def fetch_list(c: httpx2.Client, tok: Tokens, clusters: list[str], keyword: str)
     filters = (
         json.dumps({"clusterId": {"type": "options", "value": clusters}}) if clusters else "null"
     )
-    j = _post(
+    r = _post(
         c,
         page="1",
         sort='[{"key":"Id","direction":"desc"}]',
@@ -115,7 +140,8 @@ def fetch_list(c: httpx2.Client, tok: Tokens, clusters: list[str], keyword: str)
         keyword=keyword,
         action=tok.list,
         isDataViewer="true",
-    ).json()
+    )
+    j = _json(r)
     rows = []
     for item in j["data"]:
         d = {kv["key"]: kv["value"] for kv in item["data"]}
@@ -144,24 +170,26 @@ def fetch_list(c: httpx2.Client, tok: Tokens, clusters: list[str], keyword: str)
 
 def fetch_posting_data(c: httpx2.Client, tok: Tokens, pid: int) -> dict:
     """Status, tags, default locations, divId. The application form is dropped."""
-    j = _post(c, action=tok.data, postingId=str(pid)).json()
+    j = _json(_post(c, action=tok.data, postingId=str(pid)))
     j.get("applicationData", {}).pop("form", None)
     return j
 
 
 def fetch_overview_html(c: httpx2.Client, tok: Tokens, pid: int) -> str:
-    return _post(c, action=tok.overview, postingId=str(pid)).text
+    return _text(_post(c, action=tok.overview, postingId=str(pid)))
 
 
 def fetch_ratings(c: httpx2.Client, tok: Tokens, div_id: int) -> dict:
     """Hiring-history / work-term-rating report for an employer division."""
-    return _post(
-        c,
-        action=tok.ratings,
-        reportHolder="com.orbis.web.content.crm.Company",
-        reportHolderId=str(div_id),
-        reportHolderField="t100",
-    ).json()
+    return _json(
+        _post(
+            c,
+            action=tok.ratings,
+            reportHolder="com.orbis.web.content.crm.Company",
+            reportHolderId=str(div_id),
+            reportHolderField="t100",
+        )
+    )
 
 
 def posting_url(pid: int | str, display_token: str) -> str:
