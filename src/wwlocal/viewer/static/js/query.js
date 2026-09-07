@@ -24,6 +24,7 @@ const FACET_ORDER = {
 };
 
 export const SORTS = {
+  relevance: null,  // search score, highest first; resolved in visibleJobs (needs state, not just two jobs)
   "apps-asc": (a, b) => a.application_count - b.application_count || a.id - b.id,
   "apps-desc": (a, b) => b.application_count - a.application_count || a.id - b.id,
   deadline: (a, b) => deadlineMs(a) - deadlineMs(b) || a.application_count - b.application_count,
@@ -38,18 +39,6 @@ export const DEFAULT_SORT = "apps-asc";
 function deadlineMs(j) {
   const t = j.deadline ? Date.parse(j.deadline) : NaN;
   return Number.isNaN(t) ? Infinity : t;
-}
-
-/** Lower-cased text the search box matches against. */
-export function searchText(j) {
-  const d = j.detail || {};
-  return [j.title, j.organization, j.division, j.city, d.summary, d.responsibilities, d.required_skills, d.compensation, j.facets.clusters.join(" ")]
-    .filter(Boolean).join("\n").toLowerCase();
-}
-
-/** The lower-cased words a query matches on; every one must occur in a posting's searchText. */
-export function searchWords(q) {
-  return (q || "").toLowerCase().split(/\s+/).filter(Boolean);
 }
 
 /** [[value, count], …] for one facet over `jobs`, in menu order. */
@@ -96,23 +85,29 @@ export function passesFacets(j, filters, except) {
  * Toggles and search. Under "New only" the selected posting stays listed after it is marked
  * viewed, so selecting it doesn't yank it out from under the cursor.
  */
-export function passesBase(j, { prefs, marks, selectedId, hay }) {
+export function passesBase(j, { prefs, marks, selectedId, hits }) {
   const m = marks[j.id] || {};
   if (m.hidden && !prefs.showHidden) return false;
   if (prefs.onlyStar && !m.star) return false;
   if (prefs.hideApplied && m.applied) return false;
   if (prefs.onlyNew && m.viewed && j.id !== selectedId) return false;
-  if (prefs.q) {
-    const text = hay.get(j.id) ?? "";
-    for (const w of searchWords(prefs.q)) if (!text.includes(w)) return false;
-  }
+  if (hits.scores && !hits.scores.has(j.id)) return false;
   return true;
+}
+
+/** The comparator for `sort` under `state`; relevance without a query falls back to the default. */
+export function sortFn(sort, hits) {
+  if (sort === "relevance") {
+    if (!hits.scores) return SORTS[DEFAULT_SORT];
+    return (a, b) => hits.scores.get(b.id) - hits.scores.get(a.id) || a.id - b.id;
+  }
+  return SORTS[sort] || SORTS[DEFAULT_SORT];
 }
 
 export function visibleJobs(state) {
   return state.jobs
     .filter(j => passesBase(j, state) && passesFacets(j, state.prefs.filters))
-    .sort(SORTS[state.prefs.sort] || SORTS[DEFAULT_SORT]);
+    .sort(sortFn(state.prefs.sort, state.hits));
 }
 
 export function anyFilterActive(prefs) {

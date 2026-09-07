@@ -25,7 +25,7 @@ src/wwlocal/
   viewer/
     app.py          FastAPI app: /, /static, /jobs.json, /api/state, /apply
     state.py        viewer_state.db (SCHEMA + MIGRATIONS)
-    static/         index.html, style.css, vendor/preact-htm.mjs, js/
+    static/         index.html, style.css, vendor/{preact-htm,minisearch}.mjs, js/
 ```
 
 ## Rules
@@ -34,4 +34,4 @@ src/wwlocal/
 - Two databases in `data/` (gitignored): `waterlooworks_jobs.db` is disposable and written only by `sync`; `viewer_state.db` holds user state (`posting_state`) and is written only by `view`. `data/cookies.json` is a session secret.
 - Data shaping happens in Python: `jobs_db.build_jobs` attaches `facets`, `comp`, `external_apply`, `comp_text`, `rating_summary` via `parse.py`. The JS only filters, sorts and renders.
 - To add a kind of viewer state, add a column in `viewer/state.py` (`SCHEMA` + `MIGRATIONS`); `/api/state` picks it up. Unknown keys → 400.
-- Frontend modules: `store.js` (single state object, all actions, only caller of `api.js`), `query.js` (pure facets/filters/sorts, no DOM), `api.js`/`prefs.js` (server / localStorage), `sanitize.js`/`format.js`, `keys.js` (keyboard map), `components/` (pure functions of props). `main.js` re-renders the whole tree on every store change. The only `dangerouslySetInnerHTML` is the posting body in `Detail.js`.
+- Frontend modules: `store.js` (single state object, all actions, only caller of `api.js`), `query.js` (pure facets/filters/sorts, no DOM), `search.js` (pure wrapper over vendored MiniSearch, imported lazily: builds the index on the first query, runs the query into `state.hits`), `api.js`/`prefs.js` (server / localStorage), `sanitize.js`/`format.js`, `keys.js` (keyboard map), `components/` (pure functions of props). `main.js` re-renders the whole tree on every store change. The only `dangerouslySetInnerHTML` is the posting body in `Detail.js`.

@@ -1,14 +1,13 @@
-// Highlights the search words wherever they appear in the rendered page, via the CSS Custom
-// Highlight API. It paints Ranges over existing text nodes, so nothing in the Preact tree (or
+// Highlights the matched search terms wherever they appear in the rendered page, via the CSS
+// Custom Highlight API. It paints Ranges over existing text nodes, so nothing in the Preact tree (or
 // the employer HTML in Detail.js) is touched; browsers without the API simply get no highlight.
-
-import { searchWords } from "./query.js";
 
 const NAME = "search";
 
-export function highlightMatches(root, q) {
+/** `terms` are the index terms that matched (search.js), so "learn" highlights "learning". */
+export function highlightMatches(root, terms) {
   if (typeof Highlight === "undefined" || !CSS.highlights) return;
-  const words = searchWords(q);
+  const words = terms.map(t => t.toLowerCase());
   if (!root || !words.length) { CSS.highlights.delete(NAME); return; }
   const ranges = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);

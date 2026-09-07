@@ -4,6 +4,7 @@ import { FACETS, FACET_GROUPS, FACET_LABELS, SORTS, facetCounts, facetGroupCount
 
 const TOGGLES = [["onlyStar", "Shortlist only"], ["showHidden", "Show hidden"], ["hideApplied", "Hide applied"], ["onlyNew", "New only"]];
 const SORT_LABELS = {
+  relevance: "relevance",
   "apps-asc": "fewest applicants", "apps-desc": "most applicants", deadline: "deadline", rating: "highest rating",
   hires: "most hires", newest: "newest", org: "employer", title: "title",
 };

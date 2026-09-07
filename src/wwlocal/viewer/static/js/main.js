@@ -7,7 +7,7 @@ import { highlightMatches } from "./highlight.js";
 const root = document.getElementById("app");
 const draw = state => {
   render(h(App, { state, visible: store.visible() }), root);
-  highlightMatches(root.querySelector(".split"), state.prefs.q);
+  highlightMatches(root.querySelector(".split"), state.hits.terms);
 };
 
 store.subscribe(draw);

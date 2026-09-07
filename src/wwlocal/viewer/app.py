@@ -1,6 +1,6 @@
 """`wwlocal view`: a local web page over the two databases.
 
-The page itself is static/ (index.html, style.css, ES modules under js/, vendored Preact).
+The page itself is static/ (index.html, style.css, ES modules under js/, vendored libs).
 /jobs.json is rebuilt from waterlooworks_jobs.db (read-only) on every request, so a sync in the
 background shows up on the next refresh. /api/state reads and writes viewer_state.db.
 /apply/<id> turns the saved session into a fresh `displayPosting` token and redirects to the

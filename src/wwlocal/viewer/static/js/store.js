@@ -3,7 +3,8 @@
 
 import * as api from "./api.js";
 import { loadPrefs, savePrefs } from "./prefs.js";
-import { searchText, visibleJobs } from "./query.js";
+import { DEFAULT_SORT, visibleJobs } from "./query.js";
+import { NO_HITS, buildIndex, runSearch } from "./search.js";
 
 let state = {
   loaded: false,
@@ -13,9 +14,12 @@ let state = {
   marks: {},          // id → {star, hidden, applied, viewed}; only non-default values are present
   prefs: loadPrefs(),
   selectedId: null,
-  hay: new Map(),     // id → searchText(job), built once per load
+  index: null,        // search.js index over `jobs`; built on the first query (see ensureIndex)
+  hits: NO_HITS,      // runSearch(index, prefs.q): {scores, terms}; scores is null when there's no query or no index yet
+  sortBeforeSearch: null,  // the sort to restore when the query is cleared (see setQuery)
 };
 const hideUndo = [];  // ids hidden this session, most recent last (ctrl+z)
+let indexing = null;  // the in-flight buildIndex(), so a burst of keystrokes builds it once
 const listeners = new Set();
 let visCache = { state: null, list: [] };
 
@@ -45,8 +49,23 @@ export async function boot() {
     set({ error: "could not load jobs.json (" + err.message + "). Run `uv run wwlocal view`, not file://." });
     return;
   }
-  const hay = new Map(data.jobs.map(j => [j.id, searchText(j)]));
-  set({ loaded: true, jobs: data.jobs, generatedAt: data.generated_at, marks, hay });
+  set({ loaded: true, jobs: data.jobs, generatedAt: data.generated_at, marks });
+  if (state.prefs.q.trim()) ensureIndex();
+}
+
+/**
+ * Build the search index on first use. Until it's ready a query matches everything; the list
+ * narrows when the build resolves (≈100ms, only ever once), against whatever the query is by then.
+ */
+function ensureIndex() {
+  if (state.index || indexing) return;
+  indexing = buildIndex(state.jobs).then(index => {
+    indexing = null;
+    set({ index, hits: runSearch(index, state.prefs.q) });
+  }, err => {
+    indexing = null;
+    set({ error: "search index failed to build (" + err.message + ")" });
+  });
 }
 
 // ---------------------------------------------------------------- marks
@@ -118,7 +137,16 @@ function setPrefs(patch) {
   savePrefs(prefs);
   set({ prefs });
 }
-export const setQuery = q => setPrefs({ q });
+/** Typing a query switches to relevance order; clearing it puts the previous sort back. */
+export function setQuery(q) {
+  const had = !!state.prefs.q.trim(), has = !!q.trim();
+  let { sort } = state.prefs, { sortBeforeSearch } = state;
+  if (has && !had && sort !== "relevance") { sortBeforeSearch = sort; sort = "relevance"; }
+  if (!has && had && sort === "relevance") { sort = sortBeforeSearch || DEFAULT_SORT; sortBeforeSearch = null; }
+  state = { ...state, sortBeforeSearch, hits: runSearch(state.index, q) };
+  setPrefs({ q, sort });
+  if (has) ensureIndex();
+}
 export const setSort = sort => setPrefs({ sort });
 export const setToggle = (name, on) => setPrefs({ [name]: !!on });
 export function setFilter(key, value, on) {
@@ -133,4 +161,7 @@ export function setFilterMany(key, values, on) {
   setPrefs({ filters: { ...state.prefs.filters, [key]: [...sel] } });
 }
 export const clearFilter = key => setPrefs({ filters: { ...state.prefs.filters, [key]: [] } });
-export const reset = () => setPrefs({ filters: {}, q: "", onlyStar: false, hideApplied: false, onlyNew: false });
+export function reset() {
+  setQuery("");
+  setPrefs({ filters: {}, onlyStar: false, hideApplied: false, onlyNew: false });
+}
