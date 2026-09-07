@@ -40,8 +40,8 @@ function Placeholder() {
   return html`
     <div class="placeholder">
       <p>Pick a posting on the left.</p>
-      <p><kbd>j</kbd> <kbd>k</kbd> move, <kbd>s</kbd> shortlist, <kbd>x</kbd> hide (<kbd>ctrl</kbd>+<kbd>z</kbd> undo), <kbd>a</kbd> mark applied,
-        <kbd>v</kbd> toggle viewed, <kbd>o</kbd> open on WaterlooWorks, <kbd>e</kbd> open the employer's own application, <kbd>/</kbd> search.</p>
+      <p><kbd>j</kbd> <kbd>k</kbd> move, <kbd>s</kbd> shortlist, <kbd>x</kbd> hide, <kbd>a</kbd> mark applied,
+        <kbd>v</kbd> toggle viewed, <kbd>ctrl</kbd>+<kbd>z</kbd> undo the last mark (<kbd>shift</kbd> to redo), <kbd>o</kbd> open on WaterlooWorks, <kbd>e</kbd> open the employer's own application, <kbd>/</kbd> search.</p>
     </div>`;
 }
 

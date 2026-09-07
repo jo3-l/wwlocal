@@ -11,7 +11,9 @@ export function bindKeys() {
     const tag = (e.target.tagName || "").toLowerCase();
     if (e.key === "Escape") { e.target.blur(); closeMenus(); return; }
     if (tag === "input" || tag === "textarea" || tag === "select") return;
-    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "z") { e.preventDefault(); store.undoHide(); return; }
+    const mod = (e.ctrlKey || e.metaKey) && !e.altKey, key = e.key.toLowerCase();
+    if (mod && key === "z") { e.preventDefault(); e.shiftKey ? store.redo() : store.undo(); return; }
+    if (mod && key === "y" && !e.shiftKey) { e.preventDefault(); store.redo(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const id = store.get().selectedId;
     switch (e.key) {

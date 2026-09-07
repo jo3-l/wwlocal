@@ -18,7 +18,8 @@ let state = {
   hits: NO_HITS,      // runSearch(index, prefs.q): {scores, terms}; scores is null when there's no query or no index yet
   sortBeforeSearch: null,  // the sort to restore when the query is cleared (see setQuery)
 };
-const hideUndo = [];  // ids hidden this session, most recent last (ctrl+z)
+const undoStack = [];  // {id, key, was}: each explicit mark change this session, most recent last (ctrl+z)
+const redoStack = [];  // entries undone, cleared by the next new change (ctrl+shift+z)
 let indexing = null;  // the in-flight buildIndex(), so a burst of keystrokes builds it once
 const listeners = new Set();
 let visCache = { state: null, list: [] };
@@ -90,26 +91,34 @@ function setMark(id, patch) {
     });
 }
 
-export function toggleMark(id, key) {
-  const was = !!mark(id)[key];
-  if (key === "hidden" && !was) hideUndo.push(id);
-  const before = visible();
-  const idx = before.findIndex(j => j.id === id);
-  setMark(id, { [key]: !was });
-  // If the posting just dropped out of the list, move the cursor to its neighbour.
-  const gone = (key === "hidden" && !was && !state.prefs.showHidden) || (key === "viewed" && !was && state.prefs.onlyNew);
-  if (gone && id === state.selectedId) {
-    const rest = visible().filter(j => j.id !== id);
-    if (rest.length) select(rest[Math.min(idx, rest.length - 1)].id);
+/** Apply one mark and, if the selected posting just dropped out of the list, move the cursor to its neighbour. */
+function applyMark(id, key, value) {
+  const idx = visible().findIndex(j => j.id === id);
+  setMark(id, { [key]: value });
+  if (id === state.selectedId && !visible().some(j => j.id === id)) {
+    const rest = visible();
+    if (rest.length) select(rest[Math.min(Math.max(idx, 0), rest.length - 1)].id);
   }
 }
 
-export function undoHide() {
-  let id;
-  while (hideUndo.length && !mark(id = hideUndo.pop()).hidden) id = null;
-  if (!id) return;
-  setMark(id, { hidden: false });
-  select(id);
+export function toggleMark(id, key) {
+  const was = !!mark(id)[key];
+  undoStack.push({ id, key, was });
+  redoStack.length = 0;
+  applyMark(id, key, !was);
+}
+
+// Only explicit toggles are undoable; the `viewed` that select() applies goes straight to setMark.
+export const undo = () => shift(undoStack, redoStack);
+export const redo = () => shift(redoStack, undoStack);
+
+function shift(from, to) {
+  let e;
+  while ((e = from.pop()) && !!mark(e.id)[e.key] === e.was) e = null;  // already reverted by hand
+  if (!e) return;
+  to.push({ ...e, was: !e.was });
+  applyMark(e.id, e.key, e.was);
+  select(e.id);
 }
 
 // ---------------------------------------------------------------- selection
