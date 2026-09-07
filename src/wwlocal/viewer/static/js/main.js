@@ -2,12 +2,14 @@ import { h, render } from "../vendor/preact-htm.mjs";
 import * as store from "./store.js";
 import { bindKeys } from "./keys.js";
 import { App } from "./components/App.js";
-import { highlightMatches } from "./highlight.js";
+import { highlightMatches, highlightLanguages } from "./highlight.js";
 
 const root = document.getElementById("app");
 const draw = state => {
   render(h(App, { state, visible: store.visible() }), root);
   highlightMatches(root.querySelector(".split"), state.hits.terms);
+  const j = state.jobs.find(x => x.id === state.selectedId);
+  highlightLanguages(root.querySelector(".detail .body"), j ? j.languages.flatMap(l => l.forms) : []);
 };
 
 store.subscribe(draw);

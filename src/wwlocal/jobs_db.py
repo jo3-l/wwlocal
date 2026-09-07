@@ -6,7 +6,7 @@ import hashlib
 import json
 import sqlite3
 
-from wwlocal import parse
+from wwlocal import languages, parse
 from wwlocal.config import JOBS_DB, JOBS_URL, now_iso
 
 SCHEMA = """
@@ -91,11 +91,13 @@ def build_jobs(con: sqlite3.Connection, include_closed: bool) -> dict:
                 "ratings": ratings.get(r["div_id"]),
                 "url": f"{JOBS_URL}#posting-{r['id']}",
                 # derived for the viewer; see parse.py
+                "division": parse.division(summary),
                 "facets": parse.facets(summary, detail, external),
                 "external_apply": external,
                 "comp_text": comp_text,
                 "comp": parse.compensation(comp_text),
                 "rating_summary": parse.rating_summary(ratings.get(r["div_id"])),
+                "languages": languages.languages(fields, summary.get("title")),
             }
         )
     last_run = con.execute(

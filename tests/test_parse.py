@@ -2,8 +2,10 @@
 
 import pytest
 
+from wwlocal import languages
 from wwlocal.parse import (
     compensation,
+    division,
     duration_key,
     external_application,
     facets,
@@ -260,3 +262,49 @@ def test_external_application(field, method, expected):
 def test_facets_apply_value():
     assert facets({}, None)["apply"] == "WaterlooWorks only"
     assert facets({}, None, {"url": "x"})["apply"] == "Also on employer site"
+
+
+# ---------------------------------------------------------------- languages (languages.py)
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("C, C++ and Go", ["C", "C++", "Go"]),
+        ("Go beyond the basics", []),
+        ("R and Python", ["R", "Python"]),
+        ("Our R&D team", []),
+        ("Section C.", []),
+        ("Modern C++17", ["C++"]),
+        ("JavaScript/TypeScript", ["JavaScript", "TypeScript"]),
+        ("Ruby on Rails", ["Ruby"]),
+        ("a swift response; Swift and Kotlin", ["Swift", "Kotlin"]),
+        ("python scripts", ["Python"]),
+    ],
+)
+def test_languages_find(text, expected):
+    assert [name for name, _ in languages.find(text)] == expected
+
+
+def test_languages_orders_by_first_mention_across_fields():
+    fields = {
+        "required_skills": {"text": "Python, Rust"},
+        "job_summary": {"text": "Some Golang. Python."},
+        "job_responsibilities": {"text": "Write Go services"},
+    }
+    assert languages.languages(fields, "Go Developer") == [
+        {"name": "Go", "forms": ["Go", "Golang"]},
+        {"name": "Python", "forms": ["Python"]},
+        {"name": "Rust", "forms": ["Rust"]},
+    ]
+    assert languages.languages(None) == []
+
+
+def test_division_drops_stock_labels_and_repeats():
+    assert division({"organization": "Acme", "division": "Widgets"}) == "Widgets"
+    assert division({"organization": "Acme", "division": "Acme"}) is None
+    assert division({"organization": "Acme", "division": ""}) is None
+    assert division({"organization": "Acme"}) is None
+    stock = ["Divisional Office", "Head Office", "Corporate Head Office", "Corporate Headquarters"]
+    for label in stock:
+        assert division({"organization": "Acme", "division": label}) is None

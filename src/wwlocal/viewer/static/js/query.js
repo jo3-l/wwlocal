@@ -7,10 +7,11 @@ export const FACETS = {
   duration: j => [j.facets.duration],
   docs: j => j.facets.docs,
   apply: j => [j.facets.apply],
+  language: j => j.languages.map(l => l.name),
 };
 export const FACET_LABELS = {
-  arrangement: "Arrangement", location: "Location", level: "Level",
-  duration: "Term length", docs: "Documents", apply: "Apply",
+  arrangement: "Work mode", location: "Location", level: "Level",
+  duration: "Term length", docs: "Required docs", apply: "Apply via", language: "Programming language",
 };
 /** Facets whose menu is grouped under a header; the header selects every option beneath it. */
 export const FACET_GROUPS = {

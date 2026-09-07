@@ -204,6 +204,22 @@ def duration_key(d: str | None) -> str:
     return d
 
 
+# Division names WaterlooWorks fills in when the employer has not set up real divisions.
+_BOILERPLATE_DIVISION_RE = re.compile(
+    r"^(divisional?|head|main|corporate(\s+head)?)\s+(office|headquarters)$", re.I
+)
+
+
+def division(summary: dict) -> str | None:
+    """The employer division, or None when it only repeats the organization or a stock label."""
+    d = (summary.get("division") or "").strip()
+    if not d or d == (summary.get("organization") or "").strip():
+        return None
+    if _BOILERPLATE_DIVISION_RE.match(d):
+        return None
+    return d
+
+
 def facets(summary: dict, detail: dict | None, external: dict | None = None) -> dict:
     """The values the viewer's filter menus are built from, one key per menu."""
     d = detail or {}

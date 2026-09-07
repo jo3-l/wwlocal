@@ -47,18 +47,21 @@ function Placeholder() {
 
 function Posting({ job: j, mark: m }) {
   const d = j.detail || {}, f = j.facets;
-  const place = [j.city, d.region, f.country !== "Canada" && f.country !== "unspecified" ? f.country : ""].filter(Boolean).join(", ");
+  const place = [j.city, f.country !== "Canada" && f.country !== "unspecified" ? f.country : ""].filter(Boolean).join(", ");
   const hint = [j.status, j.flags && j.flags.viewed ? "viewed" : "", j.closed_at ? "closed " + fmtDate(j.closed_at) : ""].filter(Boolean).join(", ");
   const docs = f.docs.filter(x => x !== "Cover Letter").map(x => x.replace("University of Waterloo Co-op Work History", "work history")).join(", ").toLowerCase();
   return html`
     <div class="inner">
-      <p class="org">${j.organization}${j.division ? html`<span class="div">${j.division}</span>` : null}</p>
-      <div class="dh">
-        <h2>${j.title}</h2>
+      <p class="org">
+        ${j.organization}${j.division ? html`<span class="div">${j.division}</span>` : null}
         <span class="loc">
           ${place ? html`<span class="place">${place}</span>` : html`<span class="unk">Location unspecified</span>`}
           <span class="arr">${f.arrangement}</span>
         </span>
+      </p>
+      <div class="dh">
+        <h2>${j.title}</h2>
+        <${Languages} langs=${j.languages} />
       </div>
       <div class="facts">
         <${CompCell} job=${j} />
@@ -82,6 +85,15 @@ function Posting({ job: j, mark: m }) {
         First seen ${fmtDate(j.first_seen, DATE_TIME)}, last seen ${fmtDate(j.last_seen, DATE_TIME)}${j.div_id ? ", employer division " + j.div_id : ""}
       </div>
     </div>`;
+}
+
+/**
+ * The languages the posting names (languages.py), in order of first mention, as a muted list in
+ * the title row. The same strings are painted in the body by highlight.js.
+ */
+function Languages({ langs }) {
+  if (!langs.length) return null;
+  return html`<span class="langs">${langs.map(l => html`<span key=${l.name}>${l.name.toLowerCase()}</span>`)}</span>`;
 }
 
 /** The "also apply on the employer's site" warning: link, email, or just the fact of it. */

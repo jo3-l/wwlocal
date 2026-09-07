@@ -28,7 +28,7 @@ function Row({ job: j, mark: m, selected }) {
   return html`
     <div class=${cls} tabindex="-1" onClick=${() => store.select(j.id)}>
       <div class="o">
-        ${m.star ? html`<span class="starmark" title="Shortlisted">★</span>` : null}${j.organization}${j.division && j.division !== "Divisional Office" ? html`<span class="div"> – ${j.division}</span>` : null}${j.external_apply ? html`<span class="ext" title="Employer also wants an application on their own site">+ external</span>` : null}${m.viewed ? null : html`<span class="new">new</span>`}
+        ${m.star ? html`<span class="starmark" title="Shortlisted">★</span>` : null}${j.organization}${j.external_apply ? html`<span class="ext" title="Employer also wants an application on their own site">+ external</span>` : null}${m.viewed ? null : html`<span class="new">new</span>`}
       </div>
       <div class="t">${j.title}</div>
       <div class="m"><span class="arr">${meta[0]}</span>${meta.slice(1).map(x => html`<span key=${x}>${x}</span>`)}</div>

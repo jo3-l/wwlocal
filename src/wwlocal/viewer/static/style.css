@@ -32,6 +32,8 @@
 
 /* Search-word highlights, painted by js/highlight.js (CSS Custom Highlight API). */
 ::highlight(search) { background-color: var(--gold-soft); }
+/* Languages the posting names, painted over the body text (js/highlight.js, languages.py). */
+::highlight(language) { background-color: var(--accent-soft); text-decoration: underline; text-decoration-color: var(--accent); }
 
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
@@ -164,7 +166,7 @@ kbd { font: 12px var(--sans); border: 1px solid var(--line-strong); border-botto
 .org .div { color: var(--muted); font-size: 16px; font-weight: 500; letter-spacing: 0; }
 .dh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-top: 6px; }
 .dh h2 { font: 500 19px/1.3 var(--sans); color: var(--ink-2); margin: 0; }
-.loc { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; }
+.loc { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font-size: 15px; font-weight: 400; letter-spacing: 0; }
 .loc .place { font-weight: 600; color: var(--ink); }
 .loc .place::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 50% 50% 50% 0; background: var(--accent); transform: rotate(-45deg); vertical-align: -1px; }
 .loc .arr { color: var(--ink-2); padding: 1px 8px; border-radius: 10px; background: var(--accent-soft); font-size: 12.5px; font-weight: 500; }
@@ -177,6 +179,9 @@ kbd { font: 12px var(--sans); border: 1px solid var(--line-strong); border-botto
 .facts div b { display: block; font-size: 14.5px; font-weight: 500; color: var(--ink); margin-bottom: 1px; }
 .facts .warn b { color: var(--bad); }
 .facts .pay b { color: var(--accent); font-weight: 600; }
+/* languages the posting names, muted and dot-separated at the end of the title row */
+.langs { flex-basis: 100%; display: inline-flex; flex-wrap: wrap; align-items: baseline; font-size: 14.5px; font-weight: 500; color: var(--ink-2); opacity: 0.75; }
+.langs span + span::before { content: "·"; margin: 0 6px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; align-items: center; }
 .btn {
   padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line-strong);

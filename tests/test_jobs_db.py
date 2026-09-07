@@ -10,9 +10,18 @@ def test_build_jobs_derives_fields():
     con = sqlite3.connect(":memory:")
     con.row_factory = sqlite3.Row
     con.executescript(jobs_db.SCHEMA)
-    summary = {"id": 1, "title": "Dev", "organization": "Acme", "level": "Junior, Intermediate"}
+    summary = {
+        "id": 1,
+        "title": "Dev",
+        "organization": "Acme",
+        "division": "Divisional Office",
+        "level": "Junior, Intermediate",
+    }
     overview = {
-        "fields": {"compensation_and_benefits": {"text": "$30 per hour", "html": "<p>$30</p>"}},
+        "fields": {
+            "compensation_and_benefits": {"text": "$30 per hour", "html": "<p>$30</p>"},
+            "required_skills": {"text": "Python and AWS"},
+        },
         "normalized": {"location_arrangement": "Hybrid", "work_term_duration": "4 month work term"},
     }
     con.execute(
@@ -28,6 +37,7 @@ def test_build_jobs_derives_fields():
     payload = jobs_db.build_jobs(con, include_closed=False)
     assert payload["count"] == 1
     j = payload["jobs"][0]
+    assert j["division"] is None
     assert j["comp_text"] == "$30 per hour"
     assert j["comp"] == {"lo": 30, "hi": None, "unit": "hr", "currency": None}
     assert j["facets"]["arrangement"] == "Hybrid"
@@ -35,6 +45,7 @@ def test_build_jobs_derives_fields():
     assert j["facets"]["levels"] == ["Junior", "Intermediate"]
     assert j["ratings"] == {"tables": [], "charts": []}
     assert j["rating_summary"]["rating"] is None
+    assert [x["name"] for x in j["languages"]] == ["Python"]
 
 
 def test_build_jobs_without_detail_or_ratings():
@@ -48,5 +59,6 @@ def test_build_jobs_without_detail_or_ratings():
     )
     j = jobs_db.build_jobs(con, include_closed=True)["jobs"][0]
     assert j["detail"] is None and j["fields"] is None and j["ratings"] is None
+    assert j["languages"] == []
     assert j["comp"] is None and j["comp_text"] == ""
     assert j["facets"]["levels"] == [] and j["rating_summary"]["hires_total"] == 0
