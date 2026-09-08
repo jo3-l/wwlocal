@@ -2,6 +2,8 @@ import { html } from "../../vendor/preact-htm.mjs";
 import * as store from "../store.js";
 import { relTime } from "../format.js";
 
+const MAX_APPLICATIONS = 50;
+
 export function TopBar({ state }) {
   return html`
     <header class="top">
@@ -16,11 +18,15 @@ export function TopBar({ state }) {
 function Meta({ state }) {
   if (state.error) return html`<div class="meta">${state.error}</div>`;
   if (!state.loaded) return html`<div class="meta">loading…</div>`;
-  const { jobs, generatedAt } = state;
+  const { jobs, generatedAt, marks } = state;
+  const applied = Object.values(marks).filter(m => m.applied).length;
   const terms = [...new Set(jobs.map(j => (j.detail || {}).work_term).filter(Boolean))];
   const closed = jobs.filter(j => j.closed_at).length;
   return html`
     <div class="meta" title=${generatedAt}>
       <b>${jobs.length}</b> postings${terms.length === 1 ? ", " + terms[0] : ""}${closed ? `, ${closed} closed` : ""}, synced ${relTime(generatedAt)}
+      <span class=${"applied-count" + (applied >= MAX_APPLICATIONS ? " full" : "")} title="Applications made (WaterlooWorks limit)">
+        <b>${applied}</b>/${MAX_APPLICATIONS} applied
+      </span>
     </div>`;
 }

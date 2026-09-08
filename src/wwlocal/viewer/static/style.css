@@ -66,6 +66,8 @@ kbd { font: 12px var(--sans); border: 1px solid var(--line-strong); border-botto
 .top h1 { font-size: 17px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
 .top .meta { color: var(--muted); font-size: 13px; }
 .top .meta b { color: var(--ink-2); font-weight: 600; }
+.top .meta .applied-count { margin-left: 10px; }
+.top .meta .applied-count.full, .top .meta .applied-count.full b { color: var(--bad); }
 .top .spacer { flex: 1; }
 .search {
   width: 340px; max-width: 40vw;
