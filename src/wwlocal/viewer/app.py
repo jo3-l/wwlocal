@@ -7,8 +7,6 @@ background shows up on the next refresh. /api/state reads and writes viewer_stat
 posting on WaterlooWorks.
 """
 
-from __future__ import annotations
-
 import logging
 import sqlite3
 import sys

@@ -4,8 +4,6 @@ Incremental: only new or changed postings get their details re-fetched; postings
 the (filtered) board are marked closed; employer ratings are refreshed every RATINGS_TTL_DAYS.
 """
 
-from __future__ import annotations
-
 import json
 import sys
 from concurrent.futures import ThreadPoolExecutor

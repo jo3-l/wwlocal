@@ -1,7 +1,5 @@
 """Turn the board's HTML/JSON blobs into plain dicts."""
 
-from __future__ import annotations
-
 import html as htmllib
 import re
 from typing import Any

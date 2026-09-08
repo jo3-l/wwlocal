@@ -6,8 +6,6 @@ Nothing here touches data/: the mock database and the viewer state live in a tem
 WWLOCAL_DIR. Needs the Playwright chromium from `uv run playwright install chromium`.
 """
 
-from __future__ import annotations
-
 import io
 import json
 import os

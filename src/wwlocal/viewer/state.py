@@ -4,8 +4,6 @@ Columns are the contract. To add a kind of state, add a column to SCHEMA and an
 `ALTER TABLE ... ADD COLUMN` line to MIGRATIONS; the API picks it up automatically.
 """
 
-from __future__ import annotations
-
 import contextlib
 import sqlite3
 import threading

@@ -5,8 +5,6 @@ sync    pull the (filtered) board into data/waterlooworks_jobs.db
 view    serve the viewer page over the local databases
 """
 
-from __future__ import annotations
-
 import argparse
 import sys
 

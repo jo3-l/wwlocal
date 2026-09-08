@@ -4,8 +4,6 @@ Every call is a POST to jobs.htm carrying an `action` token. Tokens are embedded
 and rotate on each page load (but stay valid for the session), so one GET yields a fresh set.
 """
 
-from __future__ import annotations
-
 import codecs
 import json
 import re

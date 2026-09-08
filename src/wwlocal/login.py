@@ -1,7 +1,5 @@
 """`wwlocal login`: complete UW SSO + Duo in a real browser, keep the cookies."""
 
-from __future__ import annotations
-
 import json
 import re
 

@@ -1,7 +1,5 @@
 """Paths, constants and the one helper every module needs."""
 
-from __future__ import annotations
-
 import os
 from datetime import UTC, datetime
 from pathlib import Path

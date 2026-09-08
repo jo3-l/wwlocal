@@ -1,7 +1,5 @@
 """waterlooworks_jobs.db: the local mirror of the board. Written by sync, read by the viewer."""
 
-from __future__ import annotations
-
 import hashlib
 import json
 import sqlite3

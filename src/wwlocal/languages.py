@@ -1,7 +1,5 @@
 """Programming languages named in a posting: a small alias list and a matcher over its text."""
 
-from __future__ import annotations
-
 import re
 from collections.abc import Iterable
 
