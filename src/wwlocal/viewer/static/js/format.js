@@ -1,7 +1,5 @@
 // Small formatting helpers shared by the components. Pure functions.
 
-export const ALL_AVG_FALLBACK = 8.5; // WaterlooWorks-wide average satisfaction, if the report omits it
-
 export function fmtDate(d, opts) {
   return d ? new Date(d).toLocaleDateString("en-CA", opts || { month: "short", day: "numeric" }) : "—";
 }
@@ -16,9 +14,10 @@ export function relTime(iso) {
   return Math.round(h / 24) + " days ago";
 }
 
-/** "up" / "down" / "" for a rating against the all-students average. */
+/** "up" / "down" / "" for a rating against the all-students average; "" if the report has no average. */
 export function ratingClass(rating, allAvg) {
-  const diff = rating - (allAvg ?? ALL_AVG_FALLBACK);
+  if (allAvg == null) return "";
+  const diff = rating - allAvg;
   return diff >= 0.3 ? "up" : diff <= -0.3 ? "down" : "";
 }
 

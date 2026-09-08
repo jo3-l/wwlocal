@@ -52,9 +52,9 @@ function Spark({ r }) {
 
 function RateLine({ r }) {
   if (r.rating == null) return html`<span class="rate">${r.hires_total ? r.hires_total + " hired, unrated" : ""}</span>`;
-  const avg = r.all_avg ?? 8.5;
+  const vs = r.all_avg != null ? " vs " + r.all_avg + " for all co-op students" : "";
   return html`
-    <span class=${"rate " + ratingClass(r.rating, r.all_avg)} title=${"Average work term satisfaction vs " + avg + " for all co-op students"}>
+    <span class=${"rate " + ratingClass(r.rating, r.all_avg)} title=${"Average work term satisfaction" + vs}>
       <b>${r.rating.toFixed(1)}</b> from ${r.rating_n}
     </span>`;
 }

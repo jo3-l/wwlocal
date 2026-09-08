@@ -1,5 +1,5 @@
 import { html } from "../../vendor/preact-htm.mjs";
-import { ALL_AVG_FALLBACK, ratingClass, termLabel } from "../format.js";
+import { ratingClass, termLabel } from "../format.js";
 
 /** The collapsible "Hiring history and ratings" panel under the posting header. */
 export function Ratings({ job, r }) {
@@ -43,13 +43,12 @@ function Hist({ r }) {
 
 function Satisfaction({ r }) {
   if (r.rating == null) return html`<p class="none">No work term ratings yet.</p>`;
-  const avg = r.all_avg ?? ALL_AVG_FALLBACK;
   const dmax = r.dist ? Math.max(1, ...r.dist.map(x => x[1])) : 1;
   return html`
     <div class="hero">
       <span class="n">${r.rating.toFixed(1)}</span>
       <span class="of">of 10, from ${r.rating_n} rating${r.rating_n === 1 ? "" : "s"}</span>
-      <span class=${"cmp " + ratingClass(r.rating, r.all_avg)}>all co-op students <b>${avg.toFixed(1)}</b></span>
+      ${r.all_avg != null ? html`<span class=${"cmp " + ratingClass(r.rating, r.all_avg)}>all co-op students <b>${r.all_avg.toFixed(1)}</b></span>` : null}
     </div>
     ${r.div_rating != null && r.div_rating !== r.rating ? html`<div class="hist-div">This division ${r.div_rating.toFixed(1)} from ${r.div_n}</div>` : null}
     ${r.dist ? html`
