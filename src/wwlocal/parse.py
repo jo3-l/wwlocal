@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import html as htmllib
 import re
+from typing import Any
 
 from bs4 import BeautifulSoup
 
@@ -94,6 +96,21 @@ def _field_value(q) -> dict:
     text = re.sub(r"[ \t]*\n[ \t]*", "\n", q.get_text())
     val["text"] = re.sub(r"\n{3,}", "\n\n", text).strip()
     return val
+
+
+def unescape(obj: Any) -> Any:
+    """`obj` with every string HTML-unescaped, recursively.
+
+    The board's JSON endpoints hand back text that is already escaped for HTML ("R&amp;D");
+    sync runs this over the list rows, posting data and rating reports before storing them.
+    """
+    if isinstance(obj, str):
+        return htmllib.unescape(obj)
+    if isinstance(obj, list):
+        return [unescape(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: unescape(v) for k, v in obj.items()}
+    return obj
 
 
 def parse_ratings(report: dict) -> dict:

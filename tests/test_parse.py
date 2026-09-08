@@ -11,6 +11,7 @@ from wwlocal.parse import (
     facets,
     field_text,
     rating_summary,
+    unescape,
 )
 
 
@@ -163,6 +164,19 @@ REPORT = {
         },
     ],
 }
+
+
+def test_unescape_board_html_entities():
+    report = {
+        "title": "S&amp;C",
+        "rows": [["R&amp;D", 1]],
+        "series": [{"name": "&lt;3", "data": [1.5, None]}],
+    }
+    assert unescape(report) == {
+        "title": "S&C",
+        "rows": [["R&D", 1]],
+        "series": [{"name": "<3", "data": [1.5, None]}],
+    }
 
 
 def test_rating_summary():

@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 from wwlocal import jobs_db
 from wwlocal import waterlooworks as ww
 from wwlocal.config import RATINGS_TTL_DAYS, now_iso
-from wwlocal.parse import parse_overview
+from wwlocal.parse import parse_overview, unescape
 
 WORKERS = 4
 
@@ -33,6 +33,7 @@ def run(clusters: list[str], keyword: str, refresh_details: bool) -> None:
     need_detail: list[int] = []
     for r in rows:
         h = jobs_db.summary_hash(r)
+        r = unescape(r)  # the board's JSON is HTML-escaped ("R&amp;D"); store it decoded
         ex = con.execute(
             "SELECT summary_hash, detail_fetched_at, closed_at FROM postings WHERE id=?", (r["id"],)
         ).fetchone()
@@ -63,7 +64,8 @@ def run(clusters: list[str], keyword: str, refresh_details: bool) -> None:
     print(f"added {added}, changed {updated}, closed {closed}, details to fetch {len(need_detail)}")
 
     def get_detail(pid: int) -> tuple[int, dict, str]:
-        return pid, ww.fetch_posting_data(c, tok, pid), ww.fetch_overview_html(c, tok, pid)
+        data = unescape(ww.fetch_posting_data(c, tok, pid))
+        return pid, data, ww.fetch_overview_html(c, tok, pid)
 
     with ThreadPoolExecutor(WORKERS) as pool:
         for n, (pid, data, html) in enumerate(pool.map(get_detail, need_detail), 1):
@@ -99,7 +101,7 @@ def run(clusters: list[str], keyword: str, refresh_details: bool) -> None:
             for div_id, report in zip(stale, reports, strict=True):
                 con.execute(
                     "INSERT OR REPLACE INTO ratings VALUES (?,?,?)",
-                    (div_id, now_iso(), json.dumps(report)),
+                    (div_id, now_iso(), json.dumps(unescape(report))),
                 )
 
     con.execute(
