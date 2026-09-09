@@ -108,7 +108,13 @@ def _text(r: httpx2.Response) -> str:
 
 def _json(r: httpx2.Response) -> dict:
     """`Response.json` decodes the raw bytes as strict UTF-8; go through `_text` instead."""
-    return json.loads(_text(r))
+    text = _text(r)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as e:
+        if "isDataViewer" not in text and "<form" in text and "login" in text.lower():
+            raise NotLoggedIn("WaterlooWorks session expired") from e
+        raise RuntimeError(f"expected JSON, got {text[:200]!r}") from e
 
 
 def _post(c: httpx2.Client, **form: str) -> httpx2.Response:

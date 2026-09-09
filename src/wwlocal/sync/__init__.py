@@ -61,12 +61,23 @@ def run(clusters: list[str], keyword: str, refresh_details: bool) -> None:
     con.commit()
     print(f"added {added}, changed {updated}, closed {closed}, details to fetch {len(need_detail)}")
 
-    def get_detail(pid: int) -> tuple[int, dict, str]:
-        data = unescape(ww.fetch_posting_data(c, tok, pid))
-        return pid, data, ww.fetch_overview_html(c, tok, pid)
+    def get_detail(pid: int) -> tuple[int, dict, str] | None:
+        try:
+            data = unescape(ww.fetch_posting_data(c, tok, pid))
+            return pid, data, ww.fetch_overview_html(c, tok, pid)
+        except ww.NotLoggedIn:
+            raise
+        except Exception as e:
+            print(f"  detail fetch failed for {pid}: {e}", file=sys.stderr)
+            return None
 
+    failed = 0
     with ThreadPoolExecutor(WORKERS) as pool:
-        for n, (pid, data, html) in enumerate(pool.map(get_detail, need_detail), 1):
+        for n, got in enumerate(pool.map(get_detail, need_detail), 1):
+            if got is None:
+                failed += 1
+                continue
+            pid, data, html = got
             try:
                 overview = parse_overview(html)
             except Exception as e:
@@ -81,6 +92,8 @@ def run(clusters: list[str], keyword: str, refresh_details: bool) -> None:
                 con.commit()
                 print(f"  details {n}/{len(need_detail)}")
     con.commit()
+    if failed:
+        print(f"  {failed} postings skipped; rerun sync to retry them", file=sys.stderr)
 
     cutoff = (datetime.now(UTC) - timedelta(days=RATINGS_TTL_DAYS)).isoformat()
     stale = [
